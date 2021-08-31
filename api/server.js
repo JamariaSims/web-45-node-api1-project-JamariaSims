@@ -7,13 +7,23 @@ server.use(express.json());
 const baseURL = "/api/users";
 server.post(baseURL, (req, res) => {
   const newUser = req.body;
+  const { name, bio } = req.body;
   modules
     .insert(newUser)
     .then((newUser) => {
-      res.status(201).json(newUser);
+      if (!name && !bio) {
+        res.status(201).json(newUser);
+      } else {
+        res
+          .status(400)
+          .json({ message: "Please provide name and bio for the user" });
+      }
     })
-    .catch((err) => {
-      res.status(500).json({ message: err.message });
+    .catch((error) => {
+      res.status(500).json({
+        message: "There was an error while saving the user to the database",
+        error: error.message,
+      });
     });
 });
 server.get(baseURL, (req, res) => {
@@ -23,17 +33,27 @@ server.get(baseURL, (req, res) => {
       res.status(200).json(response);
     })
     .catch((error) => {
-      res.status(500).json({ message: error.message });
+      res.status(500).json({
+        message: "The users information could not be retrieved",
+        error: error.message,
+      });
     });
 });
 server.get(`${baseURL}/:id`, (req, res) => {
   modules
     .findById(req.params.id)
     .then((response) => {
-      res.status(200).json(response);
+      response
+        ? res.status(200).json(response)
+        : res.status(404).json({
+            message: "The user with the specified ID does not exist",
+          });
     })
     .catch((error) => {
-      res.status(500).json({ message: error.message });
+      res.status(404).json({
+        message: "The user information could not be retrieved",
+        error: error.message,
+      });
     });
 });
 server.delete(`${baseURL}/:id`, (req, res) => {
@@ -44,11 +64,11 @@ server.delete(`${baseURL}/:id`, (req, res) => {
         ? res.status(200).json(response)
         : res
             .status(404)
-            .json({ message: `user ${req.params.id} is not found...` });
+            .json({ message: "The user with the specified ID does not exist" });
     })
     .catch((error) => {
       console.log(error);
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: "The user could not be removed" });
     });
 });
 server.put(`${baseURL}/:id`, async (req, res) => {
@@ -57,10 +77,13 @@ server.put(`${baseURL}/:id`, async (req, res) => {
   console.log(id, changes);
   try {
     const results = await modules.update(id, changes);
-    res.status(200).json(results);
+    const { name, bio } = req.params;
+    name && bio ? res.status(200).json(results) : null;
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: error.message });
+    res
+      .status(500)
+      .json({ message: "The user information could not be modified" });
   }
 });
 module.exports = server; // EXPORT YOUR SERVER instead of {}
