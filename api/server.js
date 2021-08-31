@@ -43,11 +43,11 @@ server.get(`${baseURL}/:id`, (req, res) => {
   modules
     .findById(req.params.id)
     .then((response) => {
-      response
-        ? res.status(200).json(response)
-        : res.status(404).json({
+      !response
+        ? res.status(404).json({
             message: "The user with the specified ID does not exist",
-          });
+          })
+        : res.status(200).json(response);
     })
     .catch((error) => {
       res.status(404).json({
@@ -74,11 +74,14 @@ server.delete(`${baseURL}/:id`, (req, res) => {
 server.put(`${baseURL}/:id`, async (req, res) => {
   const { id } = req.params;
   const changes = req.body;
-  console.log(id, changes);
   try {
     const results = await modules.update(id, changes);
     const { name, bio } = req.params;
-    name && bio ? res.status(200).json(results) : null;
+    !name && !bio
+      ? res
+          .status(404)
+          .json({ message: "The user with the specified ID does not exist" })
+      : res.status(200).json(results);
   } catch (error) {
     console.log(error);
     res
