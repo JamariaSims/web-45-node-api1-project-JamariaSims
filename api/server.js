@@ -10,7 +10,7 @@ server.post(baseURL, (req, res) => {
   modules
     .insert(newUser)
     .then((newUser) => {
-      if (!newUser.name && !newUser.bio) {
+      if (!newUser.name || !newUser.bio) {
         res
           .status(400)
           .json({ message: "Please provide name and bio for the user" });
@@ -70,22 +70,29 @@ server.delete(`${baseURL}/:id`, (req, res) => {
       res.status(500).json({ message: "The user could not be removed" });
     });
 });
-server.put(`${baseURL}/:id`, async (req, res) => {
-  const { id } = req.params;
-  const changes = req.body;
+server.put("/api/users/:id", async (req, res) => {
   try {
-    const results = await modules.update(id, changes);
-    const { name, bio } = req.params;
-    !name && !bio
-      ? res
-          .status(404)
-          .json({ message: "The user with the specified ID does not exist" })
-      : res.status(200).json(results);
-  } catch (error) {
-    console.log(error);
-    res
-      .status(500)
-      .json({ message: "The user information could not be modified" });
+    const results = await modules.findById(req.params.id);
+    if (!results) {
+      res.status(404).json({
+        message: "The user with the specified ID does not exist",
+      });
+    } else {
+      if (!req.body.name || !req.body.bio) {
+        res.status(400).json({
+          message: "Please provide name and bio for the user",
+        });
+      } else {
+        const updateResults = await modules.update(req.params.id, req.body);
+        res.status(200).json(updateResults);
+      }
+    }
+  } catch (err) {
+    res.status(500).json({
+      message: "error updating user",
+      err: err.message,
+      stack: err.stack,
+    });
   }
 });
 module.exports = server; // EXPORT YOUR SERVER instead of {}
