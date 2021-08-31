@@ -7,16 +7,15 @@ server.use(express.json());
 const baseURL = "/api/users";
 server.post(baseURL, (req, res) => {
   const newUser = req.body;
-  const { name, bio } = req.body;
   modules
     .insert(newUser)
     .then((newUser) => {
-      if (!name && !bio) {
-        res.status(201).json(newUser);
-      } else {
+      if (!newUser.name && !newUser.bio) {
         res
           .status(400)
           .json({ message: "Please provide name and bio for the user" });
+      } else {
+        res.status(201).json(newUser);
       }
     })
     .catch((error) => {
